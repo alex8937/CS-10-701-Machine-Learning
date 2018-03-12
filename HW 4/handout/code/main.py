@@ -21,4 +21,4 @@ XTrain_scaled = scaler.transform(XTrain)
 XTest_scaled = scaler.transform(XTest)
 
 yTest_pred = regression(XTrain_scaled,yTrain,XTest_scaled)
-print(accuracy_score(yTest, yTest_pred.flatten()))
+print(accuracy_score(yTest, yTest_pred))

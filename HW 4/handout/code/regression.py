@@ -3,6 +3,7 @@ from sklearn.model_selection import KFold
 import pandas as pd
 import numpy as np
 from compute_kernel import *
+from KDE import *
 
 def regression(XTrain,yTrain,XTest):
     """
@@ -12,7 +13,7 @@ def regression(XTrain,yTrain,XTest):
     
     kf = KFold(n_splits= 10 , shuffle = True)
     accuracy_scores_matrix = []
-    bws = np.logspace(-5, 5, num = 10)
+    bws = np.logspace(-5, 5, num = 21)
     for regressor in [RBFRegression, BoxCarRegression, EpanechnikovRegression, QuarticRegression]:
         print(regressor.__name__)
         accuracy_scores = []
@@ -21,8 +22,9 @@ def regression(XTrain,yTrain,XTest):
             accuracy_scores.append([])
             for train, valid in kf.split(XTrain):
                 yvalid = regressor(XTrain[train], yTrain[train], XTrain[valid], bw)
-                acc = accuracy_score(yvalid, yTrain[valid].flatten())
-                accuracy_scores[-1].append(acc)     
+                acc = max(accuracy_score(yvalid, yTrain[valid]), 0)
+                accuracy_scores[-1].append(acc)   
+                print(regressor.__name__, acc)
         pd.DataFrame(accuracy_scores).plot(x = bws, logx = True, title = '{} CV'.format(regressor.__name__))    
         accuracy_scores_matrix.append(np.mean(accuracy_scores, 1))
         
@@ -35,22 +37,32 @@ def regression(XTrain,yTrain,XTest):
     
     
 def RBFRegression(XTrain,yTrain,XTest, bw):
-    logK = compute_kernel(XTrain, XTest, bw, 'rbf')
-    logy = np.log(yTrain)
-    y = np.round(np.sum(np.exp(logK + logy), 0))
-    return y
+    K = compute_kernel(XTrain, XTest, bw, 'rbf')
+    Ksum = KDE(XTrain, XTest, bw, 'rbf')
+    y = (K.T.dot(yTrain) / Ksum)
+    y[np.isnan(y)] = np.mean(yTrain)
+    return np.round(y)
 
 def BoxCarRegression(XTrain,yTrain,XTest, bw):
     K = compute_kernel(XTrain, XTest, bw, 'boxcar')
-    return np.round(K.T.dot(yTrain))
+    Ksum = KDE(XTrain, XTest, bw, 'boxcar')
+    y = (K.T.dot(yTrain) / Ksum)
+    y[np.isnan(y)] = np.mean(yTrain)
+    return np.round(y)
 
 def EpanechnikovRegression(XTrain,yTrain,XTest, bw):
     K = compute_kernel(XTrain, XTest, bw, 'Epanechnikov')
-    return np.round(K.T.dot(yTrain))
+    Ksum = KDE(XTrain, XTest, bw, 'Epanechnikov')
+    y = (K.T.dot(yTrain) / Ksum)
+    y[np.isnan(y)] = np.mean(yTrain)
+    return np.round(y)
 
 def QuarticRegression(XTrain,yTrain,XTest, bw):
     K = compute_kernel(XTrain, XTest, bw, 'Quartic')
-    return np.round(K.T.dot(yTrain))
+    Ksum = KDE(XTrain, XTest, bw, 'Quartic')
+    y = (K.T.dot(yTrain) / Ksum)
+    y[np.isnan(y)] = np.mean(yTrain)
+    return np.round(y)
 
     
     

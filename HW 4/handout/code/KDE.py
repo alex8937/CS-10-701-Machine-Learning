@@ -1,4 +1,5 @@
 import numpy as np
+from compute_kernel import *
 
 def KDE(XTrain,XTest,bw,kernel_type):
     """
@@ -7,8 +8,10 @@ def KDE(XTrain,XTest,bw,kernel_type):
       bw: bandwidth
       p: estimated density for test data, size nTest * 1
     """
-    
-    nTrain,f = XTrain.shape
-    nTest = XTest.shape[0]
-    p = np.zeros((nTest,1))
+    K = compute_kernel(XTrain,XTest,bw,kernel_type)
+    Ksum = np.sum(K, 0)
+        
+    return Ksum.reshape(-1, 1)
+     
+   
 
